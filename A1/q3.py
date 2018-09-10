@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.datasets import load_boston
+import matplotlib.pyplot as plt
+#np.random.seed(8069)
 
 BATCHES = 50
 
@@ -78,7 +80,10 @@ def lin_reg_gradient(X, y, w):
     '''
     Compute gradient of linear regression model parameterized by w
     '''
-    raise NotImplementedError()
+    n = X.shape[0]
+    gradient = 2*((np.dot(np.dot(X.T, X), w))-(np.dot(X.T,y)))/(n)
+    return gradient
+
 
 def main():
     # Load data and randomly initialise weights
@@ -86,9 +91,51 @@ def main():
     # Create a batch sampler to generate random batches from data
     batch_sampler = BatchSampler(X, y, BATCHES)
 
-    # Example usage
-    X_b, y_b = batch_sampler.get_batch()
-    batch_grad = lin_reg_gradient(X_b, y_b, w)
+    #3.5
+    K = 500 
+    grad_sum = 0
+    for i in range(K):
+        X_sample, y_sample = batch_sampler.get_batch()
+        batch_grad = lin_reg_gradient(X_sample, y_sample, w)
+        grad_sum = grad_sum +batch_grad
+    sample_grad = grad_sum/K
+    print(sample_grad)
+    
+    true_grad = lin_reg_gradient(X, y, w)
+    print(true_grad)
+    
+    #cosine similarity
+    cos_similarity = cosine_similarity(sample_grad,true_grad)
+    print(cos_similarity)
+    
+    #squared distance metric    
+    squared_dist = 0
+    for i in range(len(sample_grad)):
+        squared_dist = squared_dist + ((sample_grad[i] - true_grad[i])**2)
+    print(squared_dist)
+
+    #3.6
+    K = 500
+    log_m = list()
+    log_variances = list()
+    for m in range(1, 401):
+        log_m.append(np.log(m))
+        batch_sampler = BatchSampler(X,y,m)
+        batch_grad = list()
+        for k in range(K):
+            X_sample, y_sample = batch_sampler.get_batch()
+            batch_grad.append(lin_reg_gradient(X_sample,y_sample,w))
+        w_param_grad = list()
+        for i in batch_grad:
+            #change to other values from 0 to 12
+            w_param_grad.append(i[0])
+        log_variances.append(np.log(np.var(w_param_grad))) 
+    plt.plot(log_m,log_variances,".")
+    plt.title("log of m vs log of sample variance(w_0)")
+    plt.xlabel("log of m")
+    plt.ylabel("log of sample variance of mini-batch gradient estimate")      
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == '__main__':
